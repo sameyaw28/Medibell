@@ -24,7 +24,7 @@ export default function SplashScreen() {
     ]).start();
 
     const timer = setTimeout(() => {
-      router.replace("/");
+      router.replace("/auth");
     }, 2000);
 
     return () => clearTimeout(timer);
@@ -51,7 +51,7 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#7B5CF4",
     alignItems: "center",
     justifyContent: "center",
   },
