@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { act, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   Animated,
   Dimensions,
@@ -10,10 +10,17 @@ import {
   View, StyleSheet
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
-import { Link, useRouter } from "expo-router";
+import { useNavigation } from '@react-navigation/native';
+
+
+declare global {
+  namespace ReactNavigation {
+  }
+}
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const { width } = Dimensions.get("window");
+
 const QUICK_ACTIONS = [
   { 
     icon: "add-circle-outline" as const,
@@ -46,7 +53,7 @@ const QUICK_ACTIONS = [
 ];  
 
 interface CircularProgressProps {
-  progress: number; // should be between 0 and 1
+  progress: number;
   totalDoses: number;
   completedDoses: number;
 }
@@ -68,7 +75,7 @@ function CircularProgress({
       duration: 1000,
       useNativeDriver: true,
     }).start();
-  }, [progress]);
+  }, [progress, animationValue]); // FIXED: Added missing dependency
 
   const strokeDashoffset = animationValue.interpolate({
     inputRange: [0, 1],
@@ -90,14 +97,13 @@ function CircularProgress({
   cx={size / 2}
   cy={size / 2}
   r={radius}
-  stroke="#6B4CCF" // darker purple for better contrast
-  strokeWidth={18} // increased stroke width for visibility
+  stroke="#6B4CCF"
+  strokeWidth={18}
   fill="none"
   strokeDasharray={circumference}
   strokeDashoffset={strokeDashoffset}
   strokeLinecap="round"
 />
-
       </Svg>
       <View style={{ position: "absolute", alignItems: "center" }}>
         <Text style={styles.progressPercentage}>
@@ -110,19 +116,19 @@ function CircularProgress({
     </View>
   );
 }
-export default function HomeScreen() {
-  const router = useRouter();
+
+function HomeScreen() {
+  const navigation = useNavigation();
+  
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <LinearGradient colors={["#7B5CF4", "#6B4CCF"]} style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.headerTop}>
             <View style={{ flex: 1 }}>
-              {/* Title centered above */}
               <Text style={styles.greeting}>Daily progress</Text>
             </View>
 
-            {/* Notification icon (aligned to top-right) */}
             <TouchableOpacity style={styles.notificationButton}>
               <Ionicons name="notifications-outline" size={24} color="white" />
             </TouchableOpacity>
@@ -131,10 +137,9 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* Circular progress centered */}
           <View>
             <CircularProgress
-              progress={0.5} // 50%
+              progress={0.5}
               totalDoses={10}
               completedDoses={5}
             />
@@ -149,8 +154,15 @@ export default function HomeScreen() {
           </Text>
           <View style={styles.quickActionsGrid}>
           {QUICK_ACTIONS.map((actions) => (
-             <Link href={actions.route} key={actions.label} asChild>
-              <TouchableOpacity style={styles.actionButton}>
+<TouchableOpacity 
+  key={actions.label} 
+  style={styles.actionButton}
+  onPress={() => {
+    if (actions.label === "Add\nMedication") {
+      (navigation as any).navigate("medication");
+    }
+  }}
+>               
                 <LinearGradient colors={actions.gradient} style={styles.actionGradient} >
                   <View style={styles.actionContent}>
                     <View style={styles.actionIcon}>
@@ -158,11 +170,8 @@ export default function HomeScreen() {
                     </View>
                     <Text style={styles.actionLabel}>{actions.label}</Text>
                   </View>
-
                 </LinearGradient>
               </TouchableOpacity>
-
-             </Link>
           ))}
           </View>
         </View>
@@ -170,6 +179,7 @@ export default function HomeScreen() {
     </ScrollView>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -268,48 +278,50 @@ const styles = StyleSheet.create({
   progressRing: {
     transform: [{ rotate: "-90deg" }],
   },
-quickActionsContainer: {
-  paddingHorizontal: 20,
-  marginBottom: 25
-},
-quickActionsGrid: {
-  flexDirection: "row",
-  flexWrap: "wrap",
-  gap: 12,
-  marginTop: 15,
-},
-actionButton: {
-  width: (width - 52) / 2,
-  height: 110,
-  borderRadius: 16,
-  overflow: "hidden",
-},
-actionGradient: {
-  flex: 1,
-  padding: 15,
-},
-actionIcon: {
-  width: 40,
-  height: 40,
-  borderRadius: 12,
-  backgroundColor: "rgba(255, 255, 255, 0.2)",
-  justifyContent: "center",
-  alignItems: "center",
-},
-actionLabel: {
-  fontSize: 14,
-  color: "white",
-  fontWeight: "600",  
-  marginTop: 8,
-},
-sectionTitle: {
-  fontSize: 20,
-  fontWeight: "bold",
-  color: "#1A1A1A",
-  marginBottom: 5,
-},
-actionContent: {
-  flex: 1,
-  justifyContent: "space-between",
-}
+  quickActionsContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 25
+  },
+  quickActionsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    marginTop: 15,
+  },
+  actionButton: {
+    width: (width - 52) / 2,
+    height: 110,
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  actionGradient: {
+    flex: 1,
+    padding: 15,
+  },
+  actionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  actionLabel: {
+    fontSize: 14,
+    color: "white",
+    fontWeight: "600",  
+    marginTop: 8,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#1A1A1A",
+    marginBottom: 5,
+  },
+  actionContent: {
+    flex: 1,
+    justifyContent: "space-between",
+  }
 });
+
+export default HomeScreen;
